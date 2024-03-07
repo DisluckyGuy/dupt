@@ -1,7 +1,6 @@
 use std::env;
 use std::process;
-
-use ugs::config::Config;
+use core::config::Config;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -10,9 +9,8 @@ fn main() {
         process::exit(1);
     });
 
-    if let Err(e) = ugs::run(configs) {
+    if let Err(e) = core::run(configs) {
         println!("running failed with error message: {e}");
         process::exit(1);
-    }
-    
+    };    
 }

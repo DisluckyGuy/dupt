@@ -141,7 +141,7 @@ impl Package {
     pub fn pkginfo<'a> (&'a self) -> Result<String, Box<dyn Error>> {
         let mut info = String::new();
         let mut in_block = false;
-        let pkg_config = fs::read_to_string(format!("{}/packages/programs/{}/{}.config", tools::get_project_dir(), self.zip, self.name))?;
+        let pkg_config = fs::read_to_string(format!("{}/packages/zips/{}/{}.config", tools::get_project_dir(), self.zip, self.name))?;
         for i in pkg_config.lines() {
             if in_block {
                 continue;

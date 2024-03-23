@@ -1,12 +1,17 @@
 [package]
-name = "ugs"
+name = "dupt"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "core"
+name = "libdupt"
 path = "src/lib/lib.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+flate2 = "1.0"
+ansi_term = "0.12.1"
+tar = "0.4.40"
+termsize = "0.1.6"

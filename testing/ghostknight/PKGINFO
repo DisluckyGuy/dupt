@@ -1,0 +1,19 @@
+pkg_name: ghostknight
+name: Ghostkight
+version: 1.0
+platform: all 
+dependencies: [
+  sfml
+]
+build_dependencies: [
+  cmake
+]
+owner: Unlucky Guy
+maintainer: Unlucky Guy
+description_short: a bad game made in sfml
+description_long: you expected a long description this time?
+exec: build/ghostknight
+type: application
+catagory: gaming
+
+

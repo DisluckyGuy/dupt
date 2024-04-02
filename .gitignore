@@ -1,3 +1,4 @@
+/.vscode
 /target
 /packages/programs/*
 /link_template.txt

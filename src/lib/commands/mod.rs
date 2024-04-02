@@ -1,11 +1,13 @@
 pub mod search;
+pub mod install;
+pub mod command_list;
+pub mod run;
 
 use std::error::Error;
 
-use crate::config::Config;
 
 pub trait Command {
     fn help(&self);
     fn run(&self) -> Result<(), Box<dyn Error>>;
-    fn build<'a> (&self, config: &Config) -> Result<Box<dyn Command>, Box<dyn Error>>;
+    fn  set_from_args(&mut self, args: &Vec<String>) -> Result<(), Box<dyn Error>>;
 }

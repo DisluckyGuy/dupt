@@ -2,19 +2,17 @@ use std::error::Error;
 pub mod config;
 pub mod tools;
 pub mod commands;
-use commands::Command;
 use config::Config;
-use std::collections;
+use commands::command_list;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let mut command_list: collections::HashMap<String, Box<&mut dyn Command>> = collections::HashMap::new();
-    let mut search = commands::search::Search::default();
-    command_list.insert(String::from("search"), Box::new(&mut search));
-    let keys: Vec<&String> = command_list.keys().collect();
+    let mut command_list = command_list::CommandList::default();
+    let keys: Vec<&String> = command_list.list.keys().collect();
     if !keys.contains(&&config.process) {
         Err("Command not found")?
     }
-    let command = &command_list[&config.process];
+    let command = command_list.list.get_mut(&config.process).unwrap();
+    command.set_from_args(&config.arguments)?;
     command.run()?;
     Ok(())
 }

@@ -1,6 +1,6 @@
 use ansi_term::Color;
 
-use crate::{config::Config, tools};
+use crate::tools;
 use std::{error::Error, fs};
 pub struct Search {
     pub name: String,
@@ -13,14 +13,14 @@ impl super::Command for Search {
         println!("a command used to search packages");
     }
 
-    fn build<'a> (&'a self, config: &Config) -> Result<Box<dyn super::Command >, Box<dyn std::error::Error >> {
-        if config.arguments.len() < 1 {
+    fn set_from_args (&mut self, args: &Vec<String>) -> Result<(), Box<dyn std::error::Error >> {
+        if args.len() < 1 {
             Err("not enough arguments")?
         }
 
-        let name = String::from(&config.arguments[0]);
-
-        Ok(Box::new(Search { name }))
+        self.name = String::from(&args[0]);
+        
+        Ok(())
     }
 
     fn run(&self) -> Result<(), Box<dyn Error>> {
@@ -53,7 +53,7 @@ impl super::Command for Search {
                 description_short.clear();
             }
 
-            if i.trim().contains(&self.name) {
+            if i.trim().contains(&self.name) && &i[0..4] != "    "{
                 name = String::from(i.trim());
                 in_package = true;
             }

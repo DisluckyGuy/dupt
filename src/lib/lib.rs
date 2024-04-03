@@ -4,8 +4,10 @@ pub mod tools;
 pub mod commands;
 use config::Config;
 use commands::command_list;
+use tools::check_root_path;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    check_root_path();
     let mut command_list = command_list::CommandList::default();
     let keys: Vec<&String> = command_list.list.keys().collect();
     if !keys.contains(&&config.process) {

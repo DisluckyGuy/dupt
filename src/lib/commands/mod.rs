@@ -2,6 +2,8 @@ pub mod search;
 pub mod install;
 pub mod command_list;
 pub mod run;
+pub mod pkginfo;
+pub mod remove;
 
 use std::error::Error;
 

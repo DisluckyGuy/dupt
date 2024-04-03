@@ -2,12 +2,11 @@ use std::{
     env,
     error::Error,
     fs,
-    io::{self, Write},
+    io::{self, BufWriter, Write},
     process::{self, exit, Output},
 };
 
 use ansi_term;
-
 
 pub fn run_distrobox_command(args: &str, spawn: bool) -> Result<Output, Box<dyn Error>> {
     let command_vec: Vec<&str> = args.split_whitespace().collect();
@@ -44,10 +43,11 @@ pub fn search_package(name: &str) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn search_installed(name: &str) -> Result<(), Box<dyn Error>> {
-    let _ls = run_distrobox_command(&format!("ls {}/.dupt/installed", get_root_path()), false)?.stdout;
+    let _ls =
+        run_distrobox_command(&format!("ls {}/.dupt/installed", get_root_path()), false)?.stdout;
     let file_list = String::from_utf8(_ls)?;
     let installed_files: Vec<&str> = file_list.split_whitespace().collect();
-    
+
     if installed_files.contains(&name) {
         return Ok(());
     }
@@ -64,7 +64,12 @@ pub fn search_installed(name: &str) -> Result<(), Box<dyn Error>> {
     Err("Package not found")?
 }
 
-pub fn get_file(name: &String, repo: &str, path: String, branch: &str) -> Result<(), Box<dyn Error>> {
+pub fn get_file(
+    name: &String,
+    repo: &str,
+    path: String,
+    branch: &str,
+) -> Result<(), Box<dyn Error>> {
     let mut repo_link = String::new();
     for i in fs::read_to_string(format!("{}/sources/repos.conf", get_project_dir()))?.lines() {
         let line = i.split_once(":").unwrap();
@@ -135,6 +140,20 @@ pub fn make_dupt_folder() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+pub fn check_root_path() {
+    if fs::File::open(format!("{}/configs/configs.conf", get_project_dir())).is_ok() {
+        return;
+    }
+    let config_file =
+        fs::File::create(format!("{}/configs/configs.conf", get_project_dir())).unwrap();
+    let mut writer = BufWriter::new(config_file);
+    let _user = String::from_utf8(process::Command::new("whoami").output().unwrap().stdout)
+        .unwrap();
+    let user_name = _user
+        .trim();
+    writer.write(format!("root_path: /home/{}\n", user_name).as_bytes()).unwrap();
+}
+
 pub fn print_blue(text: &str) {
     println!("{}", ansi_term::Color::Blue.paint(text))
 }
@@ -152,7 +171,7 @@ pub fn get_project_dir() -> String {
     let project_dir: Vec<&str> = current_exec
         .to_str()
         .unwrap()
-        .split_inclusive("ugs")
+        .split_inclusive("dupt")
         .collect();
     String::from(project_dir[0])
 }
@@ -209,7 +228,14 @@ pub fn check_toolbox_env() -> Result<(), Box<dyn Error>> {
 }
 
 pub fn clear_archives(name: &String) -> Result<(), Box<dyn Error>> {
-    run_distrobox_command(&format!("rm {0}/.dupt/archives{1}.tar.gz {0}/.dupt/archives{1} -r", get_root_path(), name), false)?;
+    run_distrobox_command(
+        &format!(
+            "rm {0}/.dupt/archives/{1}.tar.gz {0}/.dupt/archives/{1} -r",
+            get_root_path(),
+            name
+        ),
+        false,
+    )?;
     Ok(())
 }
 
@@ -221,8 +247,8 @@ pub fn installed_path() -> String {
     String::from(format!("{}/sources/installed.config", get_project_dir()))
 }
 
-pub fn confirm() -> Result<bool, Box<dyn Error>> {
-    print!("Do you want to continue? [y/n]: ");
+pub fn confirm(text: &str) -> Result<bool, Box<dyn Error>> {
+    print!("{}", text);
     io::stdout().flush()?;
     let mut confirm = String::new();
     std::io::stdin().read_line(&mut confirm)?;

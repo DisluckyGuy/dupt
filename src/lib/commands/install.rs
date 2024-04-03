@@ -27,6 +27,25 @@ impl Command for Install {
 
         println!("package found");
 
+        if self.confirm {
+            println!();
+            println!("packages to install:");
+            println!();
+
+            for i in &self.names {
+                println!("{}", i);
+            }
+            println!();
+
+            let cont = tools::confirm("Do you want to continue? [y/n]:")?;
+            println!();
+            if !cont {
+                println!();
+                println!("aborting...");
+                return Ok(());
+            }
+        }
+
         tools::print_blue("downloading package");
 
         tools::get_file(
@@ -146,8 +165,6 @@ impl Command for Install {
         }
 
         if args.last().unwrap() == "-y" {
-            self.confirm = true;
-        } else {
             self.confirm = false;
         }
 
@@ -156,7 +173,7 @@ impl Command for Install {
             return Err("Not enough arguments")?;
         }
 
-        if self.confirm == true {
+        if !self.confirm {
             self.names = args[0..args.len() - 1].to_vec();
         } else {
             self.names = args.to_vec();
@@ -171,7 +188,7 @@ impl Default for Install {
     fn default() -> Self {
         Self {
             names: vec![String::from("help")],
-            confirm: false,
+            confirm: true,
         }
     }
 }

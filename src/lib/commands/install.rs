@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use crate::tools::{self, clear_archives, get_root_path, print_green, run_distrobox_command};
+use crate::tools::{self, containers, packages, paths, terminal};
 
 use super::Command;
 pub struct Install {
@@ -17,13 +17,13 @@ impl Command for Install {
 
     fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
 
-        tools::print_blue("searching package");
+        terminal::print_blue("searching package");
 
-        tools::search_package(&self.names[0])?;
+        packages::search_package(&self.names[0])?;
 
-        tools::check_toolbox_env()?;
+        containers::check_toolbox_env()?;
 
-        tools::make_dupt_folder()?;
+        containers::make_dupt_folder()?;
 
         println!("package found");
 
@@ -37,7 +37,7 @@ impl Command for Install {
             }
             println!();
 
-            let cont = tools::confirm("Do you want to continue? [y/n]:")?;
+            let cont = terminal::confirm("Do you want to continue? [y/n]:")?;
             println!();
             if !cont {
                 println!();
@@ -46,12 +46,12 @@ impl Command for Install {
             }
         }
 
-        tools::print_blue("downloading package");
+        terminal::print_blue("downloading package");
 
-        tools::get_file(
+        packages::get_file(
             &format!("{}.tar.gz", &self.names[0]),
             "dupt-repo-main",
-            format!("{}/.dupt/archives", tools::get_root_path()),
+            format!("{}/.dupt/archives", paths::get_root_path()),
             "main",
         )?;
 
@@ -59,16 +59,16 @@ impl Command for Install {
 
         let tar_file = fs::File::open(format!(
             "{}/.dupt/archives/{}.tar.gz",
-            tools::get_root_path(),
+            paths::get_root_path(),
             self.names[0]
         ))?;
 
         let tar = flate2::read::GzDecoder::new(tar_file);
         let mut archive = tar::Archive::new(tar);
         println!("unpacking");
-        archive.unpack(format!("{}/.dupt/archives", tools::get_root_path()))?;
+        archive.unpack(format!("{}/.dupt/archives", paths::get_root_path()))?;
 
-        let pkginfo = fs::read_to_string(format!("{}/.dupt/archives/{}/PKGINFO.conf", get_root_path(), self.names[0]))?;
+        let pkginfo = fs::read_to_string(format!("{}/.dupt/archives/{}/PKGINFO.conf", paths::get_root_path(), self.names[0]))?;
 
         let mut make_dependecies = Vec::new() as Vec<&str>;
         let mut dependecies = Vec::new() as Vec<&str>;
@@ -105,31 +105,31 @@ impl Command for Install {
             command += " ";
         }
 
-        tools::print_blue("installing make dependencies");
+        terminal::print_blue("installing make dependencies");
 
         println!("sudo dnf install {} -y", command);
 
-        tools::run_distrobox_command(&format!("sudo dnf install {} -y", command), true)?;
+        containers::run_distrobox_command(&format!("sudo dnf install {} -y", command), true)?;
 
         env::set_current_dir(format!(
             "{}/.dupt/archives/{}/control",
-            tools::get_root_path(),
+            paths::get_root_path(),
             self.names[0]
         ))?;
 
         println!();
         println!("running preinstall configurations");
 
-        run_distrobox_command(&format!("sh preinst.sh {}", get_root_path()), true)?;
+        containers::run_distrobox_command(&format!("sh preinst.sh {}", paths::get_root_path()), true)?;
 
         println!();
-        tools::print_blue("building..");
+        terminal::print_blue("building..");
 
-        run_distrobox_command(&format!("sh build.sh {}", get_root_path()), true)?;
+        containers::run_distrobox_command(&format!("sh build.sh {}", paths::get_root_path()), true)?;
 
-        tools::print_blue("removing make dependencies");
+        terminal::print_blue("removing make dependencies");
 
-        run_distrobox_command(&format!("sudo dnf remove {} -y", command), true)?;
+        containers::run_distrobox_command(&format!("sudo dnf remove {} -y", command), true)?;
 
         command.clear();
         
@@ -138,23 +138,23 @@ impl Command for Install {
             command += " ";
         }
 
-        tools::print_blue("installing dependencies");
+        terminal::print_blue("installing dependencies");
 
-        tools::run_distrobox_command(&format!("sudo dnf install {} -y", command), true)?;
+        tools::containers::run_distrobox_command(&format!("sudo dnf install {} -y", command), true)?;
 
         println!();
         println!("running post configurations");
 
-        run_distrobox_command(&format!("sh preinst.sh {}", get_root_path()), true)?;
+        containers::run_distrobox_command(&format!("sh preinst.sh {}", paths::get_root_path()), true)?;
 
-        run_distrobox_command(&format!("cp {0}/.dupt/archives/{1}/PKGINFO.conf {0}/.dupt/installed/{1}", get_root_path(), self.names[0]), false)?;
+        containers::run_distrobox_command(&format!("cp {0}/.dupt/archives/{1}/PKGINFO.conf {0}/.dupt/installed/{1}", paths::get_root_path(), self.names[0]), false)?;
 
         println!("cleaning archives");
 
-        clear_archives(&self.names[0])?;
+        packages::clear_archives(&self.names[0])?;
 
         println!();
-        print_green("finished successfully");
+        terminal::print_green("finished successfully");
         Ok(())
     }
 
@@ -168,7 +168,7 @@ impl Command for Install {
             self.confirm = false;
         }
 
-        if args.len() == 1 && self.confirm == true {
+        if args.len() == 1 && self.confirm == false {
             self.help();
             return Err("Not enough arguments")?;
         }

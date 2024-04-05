@@ -1,6 +1,6 @@
 use std::{fs, process};
 
-use crate::tools::{get_root_path, search_installed};
+use crate::tools::{packages, paths};
 
 use super::Command;
 
@@ -15,10 +15,10 @@ impl Command for Run {
     }
 
     fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
-        search_installed(&self.name)?;
+        packages::search_installed(&self.name)?;
 
         let pkginfo =
-            fs::read_to_string(format!("{}/.dupt/installed/{}", get_root_path(), self.name))?;
+            fs::read_to_string(format!("{}/.dupt/installed/{}", paths::get_root_path(), self.name))?;
 
         let mut exec_path = String::new();
         for i in pkginfo.lines() {
@@ -44,7 +44,7 @@ impl Command for Run {
         }
 
         let _run = process::Command::new("distrobox")
-            .current_dir(format!("{}/.dupt/bin/{}/{}", get_root_path(), self.name, exec_dir))
+            .current_dir(format!("{}/.dupt/bin/{}/{}", paths::get_root_path(), self.name, exec_dir))
             .arg("enter")
             .arg("dupt-fedora")
             .arg("--")

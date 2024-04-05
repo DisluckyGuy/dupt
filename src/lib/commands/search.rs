@@ -1,6 +1,6 @@
 use ansi_term::Color;
 
-use crate::tools;
+use crate::tools::paths;
 use std::{error::Error, fs};
 pub struct Search {
     pub name: String,
@@ -25,7 +25,7 @@ impl super::Command for Search {
 
     fn run(&self) -> Result<(), Box<dyn Error>> {
         let pkgs_file =
-            fs::read_to_string(format!("{}/sources/list.config", tools::get_project_dir()))?;
+            fs::read_to_string(format!("{}/sources/list.config", paths::get_project_dir()))?;
         let pkgs: &Vec<&str> = &pkgs_file.lines().collect();
         let mut in_package = false;
         let mut packages: Vec<Package> = Vec::new();

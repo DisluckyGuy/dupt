@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::tools::{self, get_root_path, search_installed};
+use crate::tools::{containers, packages, paths, terminal};
 
 use super::Command;
 
@@ -15,7 +15,7 @@ impl Command for Remove {
     }
 
     fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
-        search_installed(&self.names[0])?;
+        packages::search_installed(&self.names[0])?;
         if self.confirm {
             println!();
             println!("packages to remove");
@@ -26,7 +26,7 @@ impl Command for Remove {
             }
             println!();
 
-            let cont = tools::confirm("Do you want to continue? [y/n]:")?;
+            let cont = terminal::confirm("Do you want to continue? [y/n]:")?;
             println!();
             if !cont {
                 println!();
@@ -34,9 +34,15 @@ impl Command for Remove {
                 return Ok(());
             }
         }
-        fs::remove_dir_all(format!("{}/.dupt/bin/{}", get_root_path(), self.names[0]))?;
-        fs::remove_file(format!("{}/.dupt/installed/{}", get_root_path(), self.names[0]))?;
-        tools::print_green("removed succesfully!");
+        fs::remove_dir_all(format!("{}/.dupt/bin/{}", paths::get_root_path(), self.names[0]))?;
+
+        let unused_dep = packages::get_unused_dependencies(&self.names[0])?;
+        let unused_str = &unused_dep.join(" ");
+
+        containers::run_distrobox_command(&format!("sudo dnf remove {} -y", unused_str), true)?;
+        fs::remove_file(format!("{}/.dupt/installed/{}", paths::get_root_path(), self.names[0]))?;
+
+        terminal::print_green("removed succesfully!");
 
         Ok(())
     }

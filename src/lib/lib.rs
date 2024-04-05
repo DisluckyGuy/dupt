@@ -4,7 +4,7 @@ pub mod tools;
 pub mod commands;
 use config::Config;
 use commands::command_list;
-use tools::check_root_path;
+use tools::paths::check_root_path;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     check_root_path();

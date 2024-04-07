@@ -25,9 +25,9 @@ impl Command for PkgInfo {
         packages::search_package(&self.name)?;
         packages::get_file(
             &format!("{}.tar.gz", &self.name),
+            &format!("{}.tar.gz", &self.name),
             "dupt-repo-main",
             format!("{}/.dupt/archives", paths::get_root_path()),
-            "main",
         )?;
         let tar_file = fs::File::open(format!(
             "{}/.dupt/archives/{}.tar.gz",

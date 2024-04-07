@@ -1,6 +1,6 @@
 use std::{fs, process};
 
-use crate::tools::{packages, paths};
+use crate::tools::{containers, packages, paths};
 
 use super::Command;
 
@@ -15,6 +15,10 @@ impl Command for Run {
     }
 
     fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
+
+        containers::check_toolbox_env()?;
+        containers::make_dupt_folder()?;
+
         packages::search_installed(&self.name)?;
 
         let pkginfo =

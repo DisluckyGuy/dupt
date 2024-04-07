@@ -1,39 +1,33 @@
 use std::{collections, error::Error, fs, process};
 
-use super::{containers, paths};
+use super::{containers, paths::{self, get_project_dir}};
 
 pub fn search_package(name: &str) -> Result<(), Box<dyn Error>> {
-    for i in std::fs::read_to_string(paths::list_path())?.lines() {
-        if &i[0..4] == "    " || i.trim().is_empty() {
+    let repo_dir = fs::read_dir(format!("{}/sources/repositories", paths::get_project_dir()))?;
+    for i in repo_dir {
+        let repo_file = fs::read_to_string(i.unwrap().path())?;
+        for j in repo_file.lines() {
+        if &j[0..4] == "    " || j.trim().is_empty() {
             continue;
         }
-        if i.trim() == name {
+        if j.trim() == name {
             return Ok(());
         }
     }
+    }
+    
 
     Err("Package not found")?
 }
 
 pub fn search_installed(name: &str) -> Result<(), Box<dyn Error>> {
-    let _ls =
-        containers::run_distrobox_command(&format!("ls {}/.dupt/installed", paths::get_root_path()), false)?.stdout;
-    let file_list = String::from_utf8(_ls)?;
-    let installed_files: Vec<&str> = file_list.split_whitespace().collect();
-
-    if installed_files.contains(&name) {
-        return Ok(());
-    }
-
-    for i in std::fs::read_to_string(paths::installed_path())?.lines() {
-        if &i[0..4] == "    " || i.trim().is_empty() {
-            continue;
-        }
-        if i.trim() == name {
+    let entries = fs::read_dir(&format!("{}/.dupt/installed", paths::get_root_path()))?;
+    for i in entries {
+        if i.unwrap().file_name() == name.trim() {
             return Ok(());
         }
     }
-
+    
     Err("Package not found")?
 }
 
@@ -153,31 +147,42 @@ pub fn get_unused_dependencies(name: &String) -> Result<Vec<String>, Box<dyn Err
 
 pub fn get_file(
     name: &String,
+    output: &String,
     repo: &str,
     path: String,
-    branch: &str,
 ) -> Result<(), Box<dyn Error>> {
-    let mut repo_link = String::new();
-    for i in fs::read_to_string(format!("{}/sources/repos.conf", paths::get_project_dir()))?.lines() {
-        let line = i.split_once(":").unwrap();
-        let name = &line.0.trim();
-        let link = &line.1.trim();
-        println!("line: {:?}", line);
-        println!("name: {}", name);
-        println!("link: {}", link);
-        if name == &repo {
-            repo_link = link.to_string();
+    let mut repo_link = &String::new();
+    let repositries = get_repos();
+    for i in repositries.keys() {
+        if i == &repo {
+            repo_link = repositries.get(i).unwrap();
         }
     }
     println!("running curl");
-    println!("{}/{}/raw?ref={}", repo_link, name, branch);
+    let pkg_loc = repo_link.split_once("||").unwrap();
     let _curl = process::Command::new("curl")
         .current_dir(path)
         .arg("-o")
-        .arg(format!("{}", name))
-        .arg(format!("{}/{}/raw?ref={}", repo_link, name, branch))
+        .arg(format!("{}", output))
+        .arg(format!("{}{}{}",  pkg_loc.0, name, pkg_loc.1))
         .arg("-l")
         .spawn()?
         .wait()?;
     Ok(())
+}
+
+pub fn get_repos() -> collections::HashMap<String, String> {
+    let mut repos: collections::HashMap<String, String> = collections::HashMap::new();
+    let source_file = fs::read_to_string(format!("{}/sources/sources.conf", get_project_dir())).unwrap();
+    for i in source_file.lines() {
+        if i.trim().is_empty() {
+            continue;
+        }
+        let line = i.split_once(":").unwrap();
+        let name = line.0.trim().to_string();
+        let link = line.1.trim().to_string();
+        repos.insert(name, link);
+    }
+    println!("{:?}", repos);
+    repos
 }

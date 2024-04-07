@@ -6,6 +6,7 @@ use super::remove;
 use super::run;
 use super::search;
 use super::Command;
+use super::update;
 
 pub struct CommandList {
     pub list: HashMap<String, Box<dyn Command>>
@@ -19,11 +20,13 @@ impl Default for CommandList{
         let run = run::Run::default();
         let pkginfo = pkginfo::PkgInfo::default();
         let remove = remove::Remove::default();
+        let update = update::Update::default();
         list.insert(String::from("install"), Box::new(install));
         list.insert(String::from("search"), Box::new(search));
         list.insert(String::from("run"), Box::new(run));
         list.insert(String::from("pkginfo"), Box::new(pkginfo));
         list.insert(String::from("remove"), Box::new(remove));
+        list.insert(String::from("update"), Box::new(update));
         Self {list}
     }
 }

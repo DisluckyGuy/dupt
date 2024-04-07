@@ -20,6 +20,13 @@ pub fn check_toolbox_env() -> Result<(), Box<dyn Error>> {
     println!("chacking container prescense");
 
     let output = String::from_utf8(_list_containers.stdout)?;
+    let mut _extra_args: Vec<String> = Vec::new();
+
+    // if process::Command::new("nvidia-smi").status().is_ok() {
+    //     println!("nvidia drivers detected");
+    //     extra_args.push("--nvidia".to_string());
+    // }
+
     println!("{}", output);
     if !output.contains("dupt-fedora") {
         let _create_container = process::Command::new("distrobox")
@@ -28,13 +35,13 @@ pub fn check_toolbox_env() -> Result<(), Box<dyn Error>> {
             .arg("--image")
             .arg(get_fedora_image())
             .arg("-Y")
+            .args(_extra_args)
             .spawn()?
             .wait();
     }
 
     println!("updating fedora container");
     let _update_fedora = run_distrobox_command("sudo dnf update -y", true)?;
-
     Ok(())
 }
 

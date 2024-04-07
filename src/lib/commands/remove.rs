@@ -15,7 +15,13 @@ impl Command for Remove {
     }
 
     fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
-        packages::search_installed(&self.names[0])?;
+
+        containers::make_dupt_folder()?;
+
+        for name in &self.names {
+            packages::search_installed(name)?;
+        }
+
         if self.confirm {
             println!();
             println!("packages to remove");
@@ -34,13 +40,19 @@ impl Command for Remove {
                 return Ok(());
             }
         }
-        fs::remove_dir_all(format!("{}/.dupt/bin/{}", paths::get_root_path(), self.names[0]))?;
 
-        let unused_dep = packages::get_unused_dependencies(&self.names[0])?;
-        let unused_str = &unused_dep.join(" ");
+        for name in &self.names {
 
-        containers::run_distrobox_command(&format!("sudo dnf remove {} -y", unused_str), true)?;
-        fs::remove_file(format!("{}/.dupt/installed/{}", paths::get_root_path(), self.names[0]))?;
+            fs::remove_dir_all(format!("{}/.dupt/bin/{}", paths::get_root_path(), name))?;
+
+            let unused_dep = packages::get_unused_dependencies(&name)?;
+            let unused_str = &unused_dep.join(" ");
+
+            containers::run_distrobox_command(&format!("sudo dnf remove {} -y", unused_str), true)?;
+            fs::remove_file(format!("{}/.dupt/installed/{}", paths::get_root_path(), name))?;
+        }
+        
+        
 
         terminal::print_green("removed succesfully!");
 

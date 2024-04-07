@@ -4,6 +4,7 @@ pub mod command_list;
 pub mod run;
 pub mod pkginfo;
 pub mod remove;
+pub mod update;
 
 use std::error::Error;
 

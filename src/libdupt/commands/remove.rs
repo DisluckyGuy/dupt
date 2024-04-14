@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process::exit};
 
 use crate::tools::{containers, packages, paths, terminal};
 
@@ -10,13 +10,29 @@ pub struct Remove {
 }
 
 impl Command for Remove {
+}
+
+impl Default for Remove {
+    fn default() -> Self {
+        Self {
+            names: vec!["help".to_string()],
+            confirm: true,
+        }
+    }
+}
+
+impl Remove {
     fn help(&self) {
-        todo!()
+        println!("remove installed packages");
     }
 
-    fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
 
         containers::make_dupt_folder()?;
+
+        if self.names.contains(&"help".to_string())  {
+            self.help();
+        }
 
         for name in &self.names {
             packages::search_installed(name)?;
@@ -59,28 +75,26 @@ impl Command for Remove {
         Ok(())
     }
 
-    fn set_from_args(&mut self, args: &Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn from_args(args: &Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut command = Remove::default();
+
+        
         if args.len() == 0 {
+            command.help();
             return Err("not enough arguments")?;
         }
 
         if args[args.len() - 1] != "-y" {
-            self.names = args[0..args.len()].to_vec();
-            return Ok(());
+            command.names = args[0..args.len()].to_vec();
+            return Ok(command);
         }
 
-        self.confirm = false;
-        self.names = args[0..args.len()].to_vec();
-        
-        Ok(())
-    }
-}
-
-impl Default for Remove {
-    fn default() -> Self {
-        Self {
-            names: vec!["help".to_string()],
-            confirm: true,
+        command.confirm = false;
+        command.names = args[0..args.len()].to_vec();
+        if command.names.contains(&"help".to_string()) {
+            command.help();
+            exit(0);
         }
+        Ok(command)
     }
 }

@@ -1,4 +1,4 @@
-use std::{env, fs};
+use std::{env, fs, process::exit};
 
 use crate::tools::{
     self, containers,
@@ -13,13 +13,26 @@ pub struct Install {
 }
 
 impl Command for Install {
+}
+
+impl Default for Install {
+    fn default() -> Self {
+        Self {
+            names: vec![String::from("help")],
+            confirm: true,
+        }
+    }
+}
+
+impl Install {
     fn help(&self) {
         println!("install");
         println!();
         println!("install software from different repositories");
     }
 
-    fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn run(&self) -> Result<(), Box<dyn std::error::Error>> {
+
         containers::check_toolbox_env()?;
 
         containers::make_dupt_folder()?;
@@ -34,7 +47,7 @@ impl Command for Install {
         terminal::print_blue("searching packages");
 
         for name in &self.names {
-            search_package(name)?
+            search_package(name)?;
         }
 
         println!("packages found");
@@ -82,40 +95,9 @@ impl Command for Install {
             println!("unpacking");
             archive.unpack(format!("{}/.dupt/archives", paths::get_root_path()))?;
 
-            let pkginfo = fs::read_to_string(format!(
-                "{}/.dupt/archives/{}/PKGINFO.conf",
-                paths::get_root_path(),
-                name
-            ))?;
-            let mut make_dependecies = Vec::new() as Vec<&str>;
-            let mut dependecies = Vec::new() as Vec<&str>;
-            let mut current_value = String::new();
+            let pkginfo = search_package(name)?;
 
-            for i in pkginfo.lines() {
-                if i.trim().is_empty() {
-                    continue;
-                }
-                if i.trim() == "]" {
-                    continue;
-                }
-                if &i[0..4] == "    " {
-                    if current_value == "make_dependencies" {
-                        make_dependecies.push(i.trim())
-                    } else if current_value == "dependencies" {
-                        dependecies.push(i.trim());
-                    }
-                    continue;
-                }
-                println!("{}", i);
-                let line = i.split_once(":").unwrap();
-                let key = &line.0;
-                //let value = &line.1;
-                current_value = key.to_string();
-            }
-
-            let mut command = make_dependecies.join(" ");
-
-            println!("{}", make_dependecies.len());
+            let mut command = pkginfo.make_dependencies.join(" ");
 
             terminal::print_blue("installing make dependencies");
 
@@ -151,10 +133,7 @@ impl Command for Install {
 
             command.clear();
 
-            for i in &dependecies {
-                command += i;
-                command += " ";
-            }
+            command = pkginfo.dependencies.join(" ").to_string();
 
             terminal::print_blue("installing dependencies");
 
@@ -173,7 +152,7 @@ impl Command for Install {
 
             containers::run_distrobox_command(
                 &format!(
-                    "cp {0}/.dupt/archives/{1}/PKGINFO.conf {0}/.dupt/installed/{1}",
+                    "cp {0}/.dupt/archives/{1}/PKGINFO.json {0}/.dupt/installed/{1}",
                     paths::get_root_path(),
                     name
                 ),
@@ -191,36 +170,35 @@ impl Command for Install {
         Ok(())
     }
 
-    fn set_from_args(&mut self, args: &Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn from_args(args: &Vec<String>) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut command = Install::default();
+
+        
+
         if args.len() == 0 {
-            self.help();
+            command.help();
             return Err("Not enough arguments")?;
         }
 
         if args.last().unwrap() == "-y" {
-            self.confirm = false;
+            command.confirm = false;
         }
 
-        if args.len() == 1 && self.confirm == false {
-            self.help();
+        if args.len() == 1 && command.confirm == false {
+            command.help();
             return Err("Not enough arguments")?;
         }
 
-        if !self.confirm {
-            self.names = args[0..args.len() - 1].to_vec();
+        if !command.confirm {
+            command.names = args[0..args.len() - 1].to_vec();
         } else {
-            self.names = args.to_vec();
+            command.names = args.to_vec();
         }
-
-        Ok(())
-    }
-}
-
-impl Default for Install {
-    fn default() -> Self {
-        Self {
-            names: vec![String::from("help")],
-            confirm: true,
+        
+        if command.names.contains(&"help".to_string()) {
+            command.help();
+            exit(0);
         }
+        Ok(command)
     }
 }

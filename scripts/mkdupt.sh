@@ -1,9 +1,0 @@
-cd $1
-mkdir  .dupt
-cd .dupt
-mkdir configs
-mkdir archives
-mkdir bin
-mkdir installed
-cd configs
-touch configs.conf

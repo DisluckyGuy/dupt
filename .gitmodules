@@ -1,0 +1,3 @@
+[submodule "src/libdupt"]
+	path = src/libdupt
+	url = https://github.com/DisluckyGuy/libdupt

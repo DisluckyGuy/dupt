@@ -1,10 +1,8 @@
 use std::error::Error;
-use libdupt::commands::{install::Install, pkginfo::PkgInfo, remove::Remove, run::Run, search::Search, update::Update};
+use libdupt::commands::{install::Install, pkginfo::PkgInfo, remove::Remove, run::Run, search::Search, update::Update, upgrade::Upgrade};
 use libdupt::config::Config;
-use libdupt::tools::paths::check_root_path;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    check_root_path();
     let args = &config.arguments;
     if config.process == "install" {
         let command = Install::from_args(args)?;
@@ -23,6 +21,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         command.run()?;
     } else if config.process == "update" {
         let command = Update::from_args(args)?;
+        command.run()?;
+    } else if config.process == "upgrade" {
+        let command = Upgrade::from_args(args)?;
         command.run()?;
     } else {
         Err("invalid command")?;
